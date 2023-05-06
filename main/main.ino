@@ -80,7 +80,29 @@ void loop()
     transcurrentTime = 0;
     actualizarPantallaTimer();
   }
-  if (analogRead(3) >= 350 && analogRead(3) <= 400)
+  if (analogRead(3) >= 87 && analogRead(3) <= 90)
+  {
+    timerTime += 3600;
+    timerOn = 1;
+    transcurrentTime = 0;
+    actualizarPantallaTimer();
+    if (adjustTime == false)
+    {
+      adjustTime = true;
+    }
+  }
+  if (analogRead(3) >= 30 && analogRead(3) <= 40)
+  {
+    if (adjustTime == false)
+    {
+      adjustTime = true;
+    }
+    timerTime += 60;
+    timerOn = 1;
+    transcurrentTime = 0;
+    actualizarPantallaTimer();
+  }
+  if (analogRead(3) >= 330 && analogRead(3) <= 400)
   {
     adjustTime = false;
   };
@@ -96,20 +118,97 @@ void loop()
     actualizarPantallaTemp();
   }
 
-  delay(100);
+  delay(20);
 };
 
 void actualizarPantallaTimer()
 {
-  lcd_1.setCursor(0, 0);
-  lcd_1.print("Segundos:");
-  lcd_1.print(timerTime);
-  lcd_1.createChar(0, degreeChar);
-  lcd_1.setCursor(0, 2);
-  lcd_1.print("Temp: ");
-  lcd_1.print(tempSensor());
-  lcd_1.write(char(0));
+  int time = timerTime;
+  updateRow(0);
+  if (time < 59)
+  {
+    updateRow(0);
+    lcd_1.setCursor(4, 0);
+    lcd_1.print("00");
+    lcd_1.print(":");
+    lcd_1.print("00");
+    lcd_1.print(":");
+    if (time < 10)
+    {
+      lcd_1.print("0");
+      lcd_1.print(time);
+    }
+    else
+    {
+      lcd_1.print(time);
+    }
+  }
+  else if (time > 59 && time < 3600)
+  {
+    updateRow(0);
+    lcd_1.setCursor(4, 0);
+    lcd_1.print("00");
+    lcd_1.print(":");
+    if (time < 600)
+    {
+      lcd_1.print("0");
+      lcd_1.print(time / 60);
+    }
+    else
+    {
+      lcd_1.print(time / 60);
+    }
+    lcd_1.print(":");
+    if (time % 60 < 10)
+    {
+      lcd_1.print("0"); // agregar un cero delante de los segundos si es menor que 10
+    }
+    lcd_1.print(time % 60);
+  }
+  else if (time > 3599 && time < 86400)
+  {
+    updateRow(0);
+    if (time < 36000)
+    {
+      lcd_1.setCursor(4, 0);
+      lcd_1.print("0");
+      lcd_1.print(time / 3600);
+      lcd_1.print(":");
+    }
+    else
+    {
+      lcd_1.setCursor(4, 0);
+      lcd_1.print(time / 3600);
+      lcd_1.print(":");
+    }
+
+    int minutes = (time % 3600) / 60; // calcular los minutos restantes después de restar las horas
+
+    if (minutes < 10)
+    {
+      lcd_1.print("0"); // agregar un cero delante de los minutos si es menor que 10
+    }
+    lcd_1.print(minutes);
+    lcd_1.print(":");
+
+    if (time % 60 < 10)
+    {
+      lcd_1.print("0"); // agregar un cero delante de los segundos si es menor que 10
+    }
+    lcd_1.print(time % 60);
+  }
 }
+
+// {
+//   lcd_1.setCursor(0, 0);
+//   lcd_1.print("Segundos:");
+//   lcd_1.print(timerTime);
+//   lcd_1.createChar(0, degreeChar);
+//   lcd_1.setCursor(0, 2);
+//   lcd_1.print("Temp: ");
+//   lcd_1.print(tempSensor());
+//   lcd_1.write(char(0));
+// }
 void actualizarPantallaTemp()
 {
   lcd_1.createChar(0, degreeChar);
@@ -118,13 +217,15 @@ void actualizarPantallaTemp()
   lcd_1.print(tempSensor());
   lcd_1.write(char(0));
 }
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int timer()
 {
-  delay(900);
-  transcurrentTime = transcurrentTime + 1;
-  int restTime = timerTime - transcurrentTime;
+  delay(980);
+  transcurrentTime += 1;
+  timerTime -= 1;
+  int restTime = timerTime;
   return restTime;
 };
 
@@ -230,6 +331,42 @@ void actualizarPantalla()
       lcd_1.print(tempSensor());
       lcd_1.write(char(0));
     }
+    else if (time > 3599 && time < 86400)
+    {
+      updateRow(0);
+      if (time < 36000)
+      {
+        lcd_1.setCursor(4, 0);
+        lcd_1.print("0");
+        lcd_1.print(time / 3600);
+        lcd_1.print(":");
+      }
+      else
+      {
+        lcd_1.setCursor(4, 0);
+        lcd_1.print(time / 3600);
+        lcd_1.print(":");
+      }
+
+      int minutes = (time % 3600) / 60; // calcular los minutos restantes después de restar las horas
+
+      if (minutes < 10)
+      {
+        lcd_1.print("0"); // agregar un cero delante de los minutos si es menor que 10
+      }
+      lcd_1.print(minutes);
+      lcd_1.print(":");
+
+      if (time % 60 < 10)
+      {
+        lcd_1.print("0"); // agregar un cero delante de los segundos si es menor que 10
+      }
+      lcd_1.print(time % 60);
+      lcd_1.setCursor(0, 2);
+      lcd_1.print("Temp: ");
+      lcd_1.print(tempSensor());
+      lcd_1.write(char(0));
+    }
     if (time == 0)
 
     {
@@ -243,8 +380,8 @@ void actualizarPantalla()
   }
   else
   {
-    // Limpia la pantalla y borra cualquier dato.
 
+    // Limpia la pantalla y borra cualquier dato.
     // Creamos el caracter de los grados, que previamente generamos.
     lcd_1.createChar(0, degreeChar);
     // Posicionamos el cursor en la primera fila y la primera columna, es donde empezará la pantalla a escribirse.
