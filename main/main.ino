@@ -1,9 +1,9 @@
 // Importamos librerías necesarias para el funcionamiento del programa.
 #include <LiquidCrystal.h>
 #define NOTE_C4 262
-// #include <OneWire.h>
-// #include <DallasTemperature.h>
-// #include <EEPROM.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <EEPROM.h>
 //  Matriz de bytes que contiene la representación gráfica de un carácter que se utiliza para dibujar el símbolo de grados con un pequeño círculo, para no generar conflicto en la pantalla LCD.
 byte degreeChar[8] = {
     0b00110,
@@ -18,11 +18,11 @@ byte degreeChar[8] = {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Declaramos el sensor de temperatura, que apunta al pin utilizado.
-// OneWire ourWire(13);
+OneWire ourWire(9);
 // Declaramos la pantalla a utilizar, con sus respectivos pines.
 LiquidCrystal lcd_1(12, 11, 5, 4, 3, 2);
 // Asignamos el sensor de temperatura que hemos declarado antes para utilizarlo posteriormente.
-// DallasTemperature sensors(&ourWire);
+DallasTemperature sensors(&ourWire);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -54,7 +54,7 @@ void setup()
   // Asignamos los milisegundos actuales que el arduino lleva encendido.
   tiempoEncendido = millis();
   // Arrancamos el sensor de temperatura.
-  // sensors.begin();
+  sensors.begin();
   // Arrancamos la pantalla LCD y le asignamos el numero de filas y columnas.
   lcd_1.begin(16, 2);
   // Usamos la funcion yourWelcome para generar la bienvenida al usuario.
@@ -69,18 +69,18 @@ void setup()
 void loop()
 {
 
-  if (digitalRead(9) == 1)
+  if (analogRead(3) >= 0 && analogRead(3) <= 29)
   {
     if (adjustTime == false)
     {
       adjustTime = true;
     }
-    timerTime += 1;
+    timerTime += 5;
     timerOn = 1;
     transcurrentTime = 0;
     actualizarPantallaTimer();
   }
-  if (digitalRead(10) == 1 && adjustTime == true)
+  if (analogRead(3) >= 350 && analogRead(3) <= 400)
   {
     adjustTime = false;
   };
@@ -107,7 +107,7 @@ void actualizarPantallaTimer()
   lcd_1.createChar(0, degreeChar);
   lcd_1.setCursor(0, 2);
   lcd_1.print("Temp: ");
-  lcd_1.print(random(20, 26));
+  lcd_1.print(tempSensor());
   lcd_1.write(char(0));
 }
 void actualizarPantallaTemp()
@@ -115,14 +115,14 @@ void actualizarPantallaTemp()
   lcd_1.createChar(0, degreeChar);
   lcd_1.setCursor(0, 2);
   lcd_1.print("Temp: ");
-  lcd_1.print(random(20, 26));
+  lcd_1.print(tempSensor());
   lcd_1.write(char(0));
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int timer()
 {
-  delay(1000);
+  delay(900);
   transcurrentTime = transcurrentTime + 1;
   int restTime = timerTime - transcurrentTime;
   return restTime;
@@ -140,7 +140,11 @@ void yourWelcome()
     // Imprimimos en pantalla el mensaje de bienvenida, cada caracter de la cadena de caracteres.
     lcd_1.print(bienvenida[i]);
     // Asignamos delay de 100ms para que la pantalla se actualice cada 100ms.
-    delay(100);
+    if (!(bienvenida[i] == ' '))
+    {
+      delay(180);
+    }
+
     // Si el índice es mayor o igual a 16, establecemos el cursor en la segunda fila.
     if (i >= 16)
     { // si el índice es mayor o igual a 16
@@ -197,7 +201,7 @@ void actualizarPantalla()
 
       lcd_1.setCursor(0, 2);
       lcd_1.print("Temp: ");
-      lcd_1.print(random(20, 26));
+      lcd_1.print(tempSensor());
       lcd_1.write(char(0));
     }
     else if (time > 59 && time < 3600)
@@ -223,15 +227,15 @@ void actualizarPantalla()
       lcd_1.print(time % 60);
       lcd_1.setCursor(0, 2);
       lcd_1.print("Temp: ");
-      lcd_1.print(random(20, 26));
+      lcd_1.print(tempSensor());
       lcd_1.write(char(0));
     }
     if (time == 0)
 
     {
-      tone(8, NOTE_C4, 3000);
+      tone(6, NOTE_C4, 3000);
       delay(3000);
-      noTone(8);
+      noTone(6);
       timerTime = 0;
       timerOn = 0;
       updateRow();
@@ -248,7 +252,7 @@ void actualizarPantalla()
     // Escribimos en pantalla el mensaje correspondiente.
     lcd_1.print("Temp: ");
     // Imprimimos en pantalla la funcion de tempSensor, ya que esta ha sido programada para que devuelva directamente el valor de la temperatura actual.
-    lcd_1.print(random(20, 26));
+    lcd_1.print(tempSensor());
     // Mostramos en pantalla el caracter de los grados.
     lcd_1.write(char(0));
     // Asignamos delay de 100ms para que la pantalla se actualice cada 100ms.
@@ -261,9 +265,9 @@ void actualizarPantalla()
 int tempSensor()
 {
   // Le pedimos al sensor que nos devuelva los datos de la temperatura actual.
-  // sensors.requestTemperatures();
+  sensors.requestTemperatures();
   // Asiganmos a temp el valor de la temperatura actual.
-  int temp = 0; // Se obtiene la temperatura en ºC
+  int temp = sensors.getTempCByIndex(0); // Se obtiene la temperatura en ºC
   // Retornamos el valor de temp.
   return temp;
 }
