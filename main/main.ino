@@ -23,6 +23,8 @@ OneWire ourWire(9);
 LiquidCrystal lcd_1(12, 11, 5, 4, 3, 2);
 // Asignamos el sensor de temperatura que hemos declarado antes para utilizarlo posteriormente.
 DallasTemperature sensors(&ourWire);
+const int potPin = A5;  // Pin analógico del potenciómetro
+const int motorPin = 6; // Pin digital para controlar el motor
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -35,6 +37,7 @@ void updateRow(int row);
 bool adjustTime = false;
 int timerTime;
 int timerOn;
+int motorOn = 0;
 int transcurrentTime;
 bool button9Pressed = false;
 bool button10Pressed = false;
@@ -49,6 +52,8 @@ unsigned long tiempoActual;
 // Se realizan todas las tareas de configuración iniciales necesarias para que el programa funcione correctamente.
 void setup()
 {
+  // Configuración de los pines
+  pinMode(motorPin, OUTPUT);
   pinMode(9, INPUT);
   pinMode(10, INPUT);
   // Asignamos los milisegundos actuales que el arduino lleva encendido.
@@ -106,18 +111,45 @@ void loop()
   {
     adjustTime = false;
   };
+  if (analogRead(3) >= 150 && analogRead(3) <= 180)
+  {
+    if (adjustTime == false)
+    {
+      adjustTime = true;
+    }
+    timerTime = 0;
+    timerOn = 1;
+    transcurrentTime = 0;
 
+    actualizarPantallaTimer();
+  }
   // Asignamos el tiempo actual a la variable tiempoActual.
   // Llamamos a la funcion que actualiza la pantalla para mantenerla actualizada constanmente.
   if (!adjustTime)
   {
+
     actualizarPantalla();
   }
   else
   {
+
     actualizarPantallaTemp();
   }
-
+  if (tempSensor() > 29)
+  {
+    tone(6, NOTE_C4, 3000);
+  }
+  else
+  {
+    noTone(6);
+  };
+  if (timerOn == 1 && !adjustTime)
+  {
+    int potValue = analogRead(potPin);
+    int motorSpeed = map(potValue, 0, 1023, 0, 255);
+    int revoluciones = map(motorSpeed, 0, 255, 0, 200);
+    analogWrite(motorPin, motorSpeed);
+  }
   delay(20);
 };
 
@@ -199,16 +231,6 @@ void actualizarPantallaTimer()
   }
 }
 
-// {
-//   lcd_1.setCursor(0, 0);
-//   lcd_1.print("Segundos:");
-//   lcd_1.print(timerTime);
-//   lcd_1.createChar(0, degreeChar);
-//   lcd_1.setCursor(0, 2);
-//   lcd_1.print("Temp: ");
-//   lcd_1.print(tempSensor());
-//   lcd_1.write(char(0));
-// }
 void actualizarPantallaTemp()
 {
   lcd_1.createChar(0, degreeChar);
@@ -263,14 +285,14 @@ void updateRow(int row = 3)
     if (row == 3)
     {
       lcd_1.setCursor(0, 0);
-      lcd_1.print("               ");
+      lcd_1.print("                 ");
       lcd_1.setCursor(0, 2);
-      lcd_1.print("               ");
+      lcd_1.print("                 ");
     }
     else
     {
       lcd_1.setCursor(0, row);
-      lcd_1.print("               ");
+      lcd_1.print("                 ");
     }
   }
 }
@@ -279,6 +301,9 @@ void actualizarPantalla()
 {
   if (timerOn == 1)
   {
+    int potValue = analogRead(potPin);
+    int motorSpeed = map(potValue, 0, 1023, 0, 255);
+    int revoluciones = map(motorSpeed, 0, 255, 0, 200);
 
     int time = timer();
 
@@ -304,6 +329,11 @@ void actualizarPantalla()
       lcd_1.print("Temp: ");
       lcd_1.print(tempSensor());
       lcd_1.write(char(0));
+      lcd_1.setCursor(10, 1);
+      lcd_1.print("        ");
+      lcd_1.setCursor(10, 1);
+      lcd_1.print(revoluciones);
+      lcd_1.print("RPM");
     }
     else if (time > 59 && time < 3600)
     {
@@ -330,6 +360,11 @@ void actualizarPantalla()
       lcd_1.print("Temp: ");
       lcd_1.print(tempSensor());
       lcd_1.write(char(0));
+      lcd_1.setCursor(10, 1);
+      lcd_1.print("        ");
+      lcd_1.setCursor(10, 1);
+      lcd_1.print(revoluciones);
+      lcd_1.print("RPM");
     }
     else if (time > 3599 && time < 86400)
     {
@@ -366,10 +401,16 @@ void actualizarPantalla()
       lcd_1.print("Temp: ");
       lcd_1.print(tempSensor());
       lcd_1.write(char(0));
+      lcd_1.setCursor(10, 1);
+      lcd_1.print("        ");
+      lcd_1.setCursor(10, 1);
+      lcd_1.print(revoluciones);
+      lcd_1.print("RPM");
     }
     if (time == 0)
 
     {
+
       tone(6, NOTE_C4, 3000);
       delay(3000);
       noTone(6);
@@ -380,19 +421,25 @@ void actualizarPantalla()
   }
   else
   {
-
+    updateRow(2);
     // Limpia la pantalla y borra cualquier dato.
     // Creamos el caracter de los grados, que previamente generamos.
     lcd_1.createChar(0, degreeChar);
     // Posicionamos el cursor en la primera fila y la primera columna, es donde empezará la pantalla a escribirse.
-    lcd_1.setCursor(0, 0);
+    lcd_1.setCursor(0, 2);
     // Escribimos en pantalla el mensaje correspondiente.
     lcd_1.print("Temp: ");
     // Imprimimos en pantalla la funcion de tempSensor, ya que esta ha sido programada para que devuelva directamente el valor de la temperatura actual.
     lcd_1.print(tempSensor());
-    // Mostramos en pantalla el caracter de los grados.
-    lcd_1.write(char(0));
+
+    lcd_1.write(char(0)); // Mostramos en pantalla el caracter de los grados.
     // Asignamos delay de 100ms para que la pantalla se actualice cada 100ms.
+    int potValue = analogRead(potPin);
+    int motorSpeed = map(potValue, 0, 1023, 0, 255);
+    int revoluciones = map(motorSpeed, 0, 255, 0, 200); // Ajusta el rango de las revoluciones según tus necesidades
+    lcd_1.setCursor(10, 1);
+    lcd_1.print(revoluciones);
+    lcd_1.print("RPM"); // Cambia el cursor a la segunda línea, sexta columna
   }
 };
 
